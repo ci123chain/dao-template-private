@@ -6,6 +6,16 @@ const deployENS = require('@aragon/os/scripts/deploy-test-ens')
 const deployAragonID = require('@aragon/id/scripts/deploy-beta-aragonid')
 const deployDAOFactory = require('@aragon/os/scripts/deploy-daofactory')
 
+const APPS = [
+  { name: 'agent', contractName: 'Agent' , contentURI: 'ipfs:QmPQ9bQFi7CZWff7LLBqm5sydFQ9CoXsn9ufFPQFWR1JpN'},
+  { name: 'vault', contractName: 'Vault' , contentURI: 'ipfs:QmYZpZ7tNzHmcqZbALcMxp53Tzub3P7NNgitoMa92D6gbD'},
+  { name: 'voting', contractName: 'Voting', contentURI: 'ipfs:Qmccgx6B4GyBv1RmaY2r9Tymj32ZVerKDAw6thbT3rsK1y'},
+  { name: 'survey', contractName: 'Survey' , contentURI: ''},
+  { name: 'payroll', contractName: 'Payroll' , contentURI: ''},
+  { name: 'finance', contractName: 'Finance', contentURI: 'ipfs:QmRAJxYyiWz4HqLoUWpwCfouh3v3CUp8VzF7GLrWVzSoFE' },
+  { name: 'token-manager', contractName: 'TokenManager', contentURI: 'ipfs:QmXCZCh1SzGLPHtJPJfQkR4u9fENhw6qGEUPR4RUTVGwxR' },
+]
+
 module.exports = class TemplateDeployer {
   constructor(web3, artifacts, owner, options = { verbose: false }) {
     this.web3 = web3
@@ -39,17 +49,18 @@ module.exports = class TemplateDeployer {
 
   async registerDeploy(templateName, template) {
     if ((await this.isLocal()) && !(await this._isPackageRegistered(templateName))) {
-      await this._registerPackage(templateName, template)
+      await this._registerPackage(templateName, template, 'ipfs:QmZ22mN3nwjyvjqU7fU8CMKJ2rCGvmnkNgG8E6wVDHEuRt')
     }
     await this._writeArappFile(templateName, template)
   }
 
   async _checkAppsDeployment() {
-    for (const { name, contractName } of this.options.apps) {
+
+    for (const { name, contractName, contentURI } of APPS) {
       if (await this._isPackageRegistered(name)) {
         this.log(`Using registered ${name} app`)
       } else if (await this.isLocal()) {
-        await this._registerApp(name, contractName)
+        await this._registerApp(name, contractName, contentURI)
       } else {
         this.log(`No ${name} app registered`)
       }
@@ -153,15 +164,18 @@ module.exports = class TemplateDeployer {
     return this.ens.owner(aragonIDHash)
   }
 
-  async _registerApp(name, contractName) {
+
+  async _registerApp(name, contractName, contentURI) {
     const app = await this.artifacts.require(contractName).new()
-    return this._registerPackage(name, app)
+    
+    return this._registerPackage(name, app, contentURI)
   }
 
-  async _registerPackage(name, instance) {
+  async _registerPackage(name, instance, contentURI) {
     if (this.options.register) {
       this.log(`Registering package for ${instance.constructor.contractName} as "${name}.aragonpm.eth"`)
-      return this.apm.newRepoWithVersion(name, this.owner, [1, 0, 0], instance.address, '')
+      this.log(`Registering package for name ${name}, ${instance.address} owner ${this.owner},  ContentURI ${contentURI}`)
+      return this.apm.newRepoWithVersion(name, this.owner, [1, 0, 0], instance.address, contentURI)
     }
   }
 
