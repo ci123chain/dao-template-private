@@ -175,7 +175,16 @@ contract CompanyTemplate is BaseTemplate, TokenCache {
         _createFinanceCreatePaymentsPermission(_acl, _finance, _voting, address(this));
         _createEvmScriptsRegistryPermissions(_acl, _voting, _voting);
         _createVotingPermissions(_acl, _voting, _voting, _tokenManager, _voting);
-        _createTokenManagerPermissions(_acl, _tokenManager, _voting, _voting);
+        address[] memory grantees = new address[](2);
+        grantees[0] = address(_voting);
+        grantees[1] = address(msg.sender);
+        _createTokenManagerPermissions(_acl, _tokenManager, grantees, _voting);
+    }
+
+    function _createTokenManagerPermissions(ACL _acl, TokenManager _tokenManager, address[] _grantees, address _manager) internal {
+        _createPermissions(_acl, _grantees, _tokenManager, _tokenManager.MINT_ROLE(), _manager);
+        _createPermissions(_acl, _grantees, _tokenManager, _tokenManager.BURN_ROLE(), _manager);
+
     }
 
     function _ensureCompanySettings(
